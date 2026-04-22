@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { Breadcrumb } from './Breadcrumb';
-import { ChevronDown, Plus, Edit2, Trash2, ChevronRight } from 'lucide-react';
+import { ChevronDown, Plus, Edit2, Trash2, ChevronRight, Folder } from 'lucide-react';
 import { AddParticipantsModal } from './AddParticipantsModal';
 
 interface CourseFolderAdminPageProps {
   onNavigateHome: () => void;
   onNavigateToCourseAdmin: () => void;
   onNavigateToCreateCourse?: () => void;
+  onNavigateToSubfolder?: (folderId: string, folderName: string) => void;
   folderName?: string;
+  breadcrumbPath?: string[];
+  breadcrumbHandlers?: Array<(() => void) | undefined>;
 }
 
 interface Course {
@@ -22,17 +25,29 @@ interface Course {
   isPublished?: boolean;
 }
 
+interface SubFolder {
+  id: string;
+  name: string;
+}
+
 export function CourseFolderAdminPage({ 
   onNavigateHome, 
   onNavigateToCourseAdmin,
   onNavigateToCreateCourse,
-  folderName = "Hjemmetjenesten" 
+  onNavigateToSubfolder,
+  folderName = "Hjemmetjenesten",
+  breadcrumbPath,
+  breadcrumbHandlers
 }: CourseFolderAdminPageProps) {
   const [expandedCourses, setExpandedCourses] = useState<Set<string>>(new Set());
   const [selectedInstructor, setSelectedInstructor] = useState<string>('all');
   const [showInstructorDropdown, setShowInstructorDropdown] = useState(false);
   const [showAddParticipantsModal, setShowAddParticipantsModal] = useState(false);
   const [selectedCourseForEnrollment, setSelectedCourseForEnrollment] = useState<Course | null>(null);
+
+  const subfolders: SubFolder[] = [
+    { id: 'mappe-1', name: 'Mappe' }
+  ];
 
   const courses: Course[] = [
     {
@@ -98,13 +113,27 @@ export function CourseFolderAdminPage({
     setShowAddParticipantsModal(true);
   };
 
+  const handleSubfolderClick = (folderId: string, folderName: string) => {
+    if (onNavigateToSubfolder) {
+      onNavigateToSubfolder(folderId, folderName);
+    }
+  };
+
+  const handleAddFolder = () => {
+    console.log('Legg til ny undermappe');
+  };
+
+  // Use provided breadcrumb path or default
+  const currentBreadcrumbPath = breadcrumbPath || ['Kursadministrasjon', folderName];
+  const currentBreadcrumbHandlers = breadcrumbHandlers || [onNavigateToCourseAdmin, undefined];
+
   return (
     <main className="max-w-7xl mx-auto p-6 lg:p-8 w-full">
       {/* Breadcrumb */}
       <Breadcrumb 
         onHomeClick={onNavigateHome}
-        currentPath={['Kursadministrasjon', folderName]}
-        pathClickHandlers={[onNavigateToCourseAdmin, undefined]}
+        currentPath={currentBreadcrumbPath}
+        pathClickHandlers={currentBreadcrumbHandlers}
       />
 
       {/* Header with title and action buttons */}
@@ -131,6 +160,45 @@ export function CourseFolderAdminPage({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Subfolders Section */}
+      {subfolders.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-gray-800">Undermapper</h2>
+            <button
+              onClick={handleAddFolder}
+              className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Legg til mappe</span>
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+            {subfolders.map((folder, index) => (
+              <button
+                key={folder.id}
+                onClick={() => handleSubfolderClick(folder.id, folder.name)}
+                className="group flex flex-col items-center justify-center bg-[#E5F5EF] border border-[#C0E6D6] rounded-lg p-4 min-h-[110px] transition-all duration-200 hover:border-[#0F547A] hover:shadow-md hover:-translate-y-1 text-gray-700 hover:text-[#0F547A]"
+              >
+                <Folder 
+                  className="w-10 h-10 mb-2 text-[#DDB726] transition-colors duration-200 group-hover:text-[#0F547A]" 
+                  fill="currentColor"
+                />
+                <span className="text-center text-sm break-words leading-tight">
+                  {folder.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Courses Section Header */}
+      <div className="mb-4">
+        <h2 className="text-gray-800">Kurs</h2>
       </div>
 
       {/* Add Course Button and Filter */}
